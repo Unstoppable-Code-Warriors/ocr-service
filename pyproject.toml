@@ -1,0 +1,28 @@
+[project]
+name = "sep490"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "editdistance>=0.8.1",
+    "fastapi>=0.115.12",
+    "google-genai>=1.19.0",
+    "huggingface-hub>=0.32.4",
+    "ipykernel>=6.29.5",
+    "matplotlib>=3.10.3",
+    "pandas>=2.3.0",
+    "pillow>=11.2.1",
+    "pycocotools>=2.0.10",
+    "pydantic>=2.11.5",
+    "pymupdf>=1.26.0",
+    "python-dotenv>=1.1.0",
+    "python-multipart>=0.0.20",
+    "scikit-image>=0.25.2",
+    "scipy>=1.15.3",
+    "timm>=1.0.15",
+    "torch>=2.7.1",
+    "torchvision>=0.22.1",
+    "transformers>=4.52.4",
+    "uvicorn>=0.34.3",
+]
