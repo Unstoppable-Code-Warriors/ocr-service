@@ -13,7 +13,7 @@ RUN uv sync --locked
 # Copy the rest of the application code
 COPY ./app /app
 
-
+ENV PATH="/app/.venv/bin:$PATH"
 # Make port 80 available to the world outside this container
 EXPOSE 80
 
