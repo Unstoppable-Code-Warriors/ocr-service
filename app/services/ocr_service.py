@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from fastapi.concurrency import run_in_threadpool # To handle blocking API calls
-
+import json
 from models import Data # Import the Pydantic model
 
 load_dotenv()
@@ -124,12 +124,12 @@ async def structure_data_from_text(processed_text: str) -> Data:
                 model="gemini-2.0-flash",
                 config={
                     "response_mime_type": "application/json",
-                    "response_schema": Data, 
+                    # "response_schema": Data, 
                 },
             )
         # Pydantic will automatically parse the JSON response into the Data model
         # when using response_schema with the client.
-        structured_data = response.parsed # Access the parsed model
+        structured_data = json.loads(response.text) # Access the parsed model
 
         if structured_data is None:
              # This can happen if Gemini returns non-parsable JSON or an empty response

@@ -18,7 +18,7 @@ async def read_root():
 
 @app.post(
     "/process_document",
-    response_model=Data, # Indicate the successful response structure
+    # response_model=Data, # Indicate the successful response structure
     summary="Process Document Image and Extract Structured Data"
 )
 async def process_document_image(
