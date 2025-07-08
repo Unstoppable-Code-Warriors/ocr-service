@@ -1,61 +1,48 @@
-# main.py
-from fastapi import FastAPI, File, UploadFile, HTTPException, status
-from typing import Annotated
-import io
-
+from fastapi import FastAPI, HTTPException, status, Query
 from models import Data
-from services.ocr_service import process_image_to_structured_data 
+from services.ocr_service import process_image_to_structured_data
+import os
 
 app = FastAPI(
     title="OCR and Data Structuring Service",
     description="API for processing document images using Gemini and structuring extracted data."
 )
 
-# Optional: Add a root endpoint for health check
 @app.get("/health")
 async def read_root():
     return {"message": "OCR Service is running. Go to /docs for API documentation."}
 
 @app.post(
     "/process_document",
-    response_model=Data, # Indicate the successful response structure
+    response_model=Data,
     summary="Process Document Image and Extract Structured Data"
 )
 async def process_document_image(
-    image: Annotated[UploadFile, File(description="Image file (JPG, PNG, etc.) to process.")]
+    path: str = Query(..., description="Full path to image file inside the container, e.g., /data/uploads/sample.jpg")
 ):
-    """
-    Receives a document image, performs OCR using Gemini, verifies the result,
-    and structures the extracted text into a defined JSON format.
-    """
-    if not image.content_type.startswith("image/"):
-        raise HTTPException(
-            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="Unsupported file type. Please upload an image file."
-        )
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail=f"File not found at: {path}")
 
-    # Read the image file bytes
     try:
-        image_bytes = await image.read()
+        with open(path, 'rb') as f:
+            image_bytes = f.read()
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Could not read image file: {e}"
+            detail=f"Could not read image file at {path}: {e}"
         )
 
-    # Process the image using the service
     try:
         structured_data = await process_image_to_structured_data(image_bytes)
         return structured_data
     except ValueError as e:
-         # Handle specific errors from the service (e.g., no parsable data)
-         raise HTTPException(
-             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, # Or 500 depending on cause
-             detail=f"Failed to structure data from text: {e}"
-         )
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Failed to structure data from text: {e}"
+        )
     except Exception as e:
-        # Catch any other exceptions during the process
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred during processing: {e}"
         )
+
