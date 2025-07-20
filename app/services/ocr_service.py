@@ -5,7 +5,7 @@ from google import genai
 from google.genai import types
 from fastapi.concurrency import run_in_threadpool # To handle blocking API calls
 import json
-from models import Data # Import the Pydantic model
+from models import Data,ProcessedDocumentData # Import the Pydantic model
 
 load_dotenv()
 api_key = os.getenv('GOOGLE_API_KEY')
@@ -124,7 +124,7 @@ async def structure_data_from_text(processed_text: str) -> Data:
                 model="gemini-2.0-flash",
                 config={
                     "response_mime_type": "application/json",
-                    # "response_schema": Data, 
+                    "response_schema": ProcessedDocumentData, 
                 },
             )
         # Pydantic will automatically parse the JSON response into the Data model
