@@ -8,11 +8,13 @@ class TestOrderItem(BaseModel):
     price: Optional[str] = Field(None, description="Price or cost of the test as a string (may contain currency symbol or formatting).") # Keeping as string as in JSON
 
 # New models for the required output format
-
+class YesNoStatus(BaseModel):
+    yes: bool
+    no: bool
 class ClinicalInformation(BaseModel):
-    single_pregnancy: Dict[str, bool]
-    twin_pregnancy_minor_complication: Dict[str, bool]
-    ivf_pregnancy: Dict[str, bool]
+    single_pregnancy: YesNoStatus
+    twin_pregnancy_minor_complication: YesNoStatus
+    ivf_pregnancy: YesNoStatus
     gestational_age_weeks: str
     ultrasound_date: str
     crown_rump_length_crl: str
