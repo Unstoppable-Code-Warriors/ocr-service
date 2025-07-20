@@ -8,7 +8,7 @@ WORKDIR /app
 # Copy the current directory contents into the container at /app
 COPY pyproject.toml /app
 COPY uv.lock /app
-RUN uv sync --locked
+RUN uv sync --locked --no-dev
 
 # Copy the rest of the application code
 COPY ./app /app
