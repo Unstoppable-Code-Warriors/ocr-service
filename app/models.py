@@ -1,5 +1,5 @@
 # app/models.py
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Literal
 from pydantic import BaseModel, Field
 
 class TestOrderItem(BaseModel):
@@ -13,6 +13,7 @@ class YesNoStatus(BaseModel):
     no: bool
 class ClinicalInformation(BaseModel):
     single_pregnancy: YesNoStatus
+    maternal_height: str
     twin_pregnancy_minor_complication: YesNoStatus
     ivf_pregnancy: YesNoStatus
     gestational_age_weeks: str
@@ -83,10 +84,13 @@ class NonInvasivePrenatalTesting(BaseModel):
     test_options: List[TestOption]
     
 class ProcessedDocumentData(BaseModel):
+    document_name: Literal["hereditary_cancer", "gene_mutation", "prenatal_screening"]
     full_name: str
+    gender: str
     clinic: str
     date_of_birth: str
     doctor: str
+    doctor_phone: str
     sample_collection_date: str
     sample_collection_time: str
     phone: str
