@@ -84,21 +84,22 @@ class NonInvasivePrenatalTesting(BaseModel):
     test_options: List[TestOption]
     
 class ProcessedDocumentData(BaseModel):
-    document_name: Literal["hereditary_cancer", "gene_mutation", "prenatal_screening"]
-    full_name: str
-    gender: str
-    clinic: str
-    date_of_birth: str
-    doctor: str
-    doctor_phone: str
-    sample_collection_date: str
-    sample_collection_time: str
-    phone: str
-    email: str
-    test_code: str
-    smoking: str
-    address: str
-    test_code: str = Field(..., alias="Test code")
+    document_name: Literal["hereditary_cancer", "gene_mutation", "prenatal_screening"] = Field(
+        ..., description="Loại tài liệu y tế đã xử lý (ung thư di truyền, đột biến gen, sàng lọc trước sinh)"
+    )
+    full_name: str = Field(..., description="Họ và tên đầy đủ của thai phụ hoặc bệnh nhân")
+    gender: str = Field(..., description="Giới tính của bệnh nhân")
+    clinic: str = Field(..., description="Tên phòng khám hoặc cơ sở y tế thực hiện xét nghiệm")
+    date_of_birth: str = Field(..., description="Ngày sinh của bệnh nhân (định dạng ISO, ví dụ: YYYY-MM-DD)")
+    doctor: str = Field(..., description="Tên bác sĩ phụ trách chỉ định xét nghiệm")
+    doctor_phone: str = Field(..., description="Số điện thoại của bác sĩ phụ trách")
+    sample_collection_date: str = Field(..., description="Ngày lấy mẫu xét nghiệm")
+    sample_collection_time: str = Field(..., description="Thời gian lấy mẫu xét nghiệm")
+    phone: str = Field(..., description="Số điện thoại của bệnh nhân")
+    email: str = Field(..., description="Email của bệnh nhân")
+    test_code: str = Field(..., alias="Test code", description="Mã xét nghiệm duy nhất của mẫu")
+    smoking: str = Field(..., description="Tình trạng hút thuốc (ví dụ: 'yes', 'no', 'occasionally')")
+    address: str = Field(..., description="Địa chỉ của bệnh nhân")
     non_invasive_prenatal_testing: NonInvasivePrenatalTesting
     additional_selection_notes: AdditionalSelectionNotes
     hereditary_cancer: HereditaryCancer
