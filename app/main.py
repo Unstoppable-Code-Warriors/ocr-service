@@ -17,6 +17,29 @@ app = FastAPI(
 )
 
 @app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring and load balancers."""
+    import os
+    from datetime import datetime
+    
+    # Check if required environment variables are present
+    api_key_present = bool(os.getenv('GOOGLE_API_KEY'))
+    
+    return {
+        "status": "healthy",
+        "message": "OCR Service is running",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "0.1.0",
+        "environment": {
+            "google_api_key_configured": api_key_present
+        },
+        "endpoints": {
+            "docs": "/docs",
+            "process_document": "/process_document"
+        }
+    }
+
+@app.get("/")
 async def read_root():
     return {"message": "OCR Service is running. Go to /docs for API documentation."}
 

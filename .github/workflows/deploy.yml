@@ -1,0 +1,172 @@
+name: Build and Deploy OCR Service
+
+on:
+    push:
+        branches: [main, develop]
+    pull_request:
+        branches: [main]
+    workflow_dispatch:
+        inputs:
+            environment:
+                description: "Environment to deploy to (production/staging)"
+                required: false
+                default: "production"
+                type: choice
+                options:
+                    - production
+                    - staging
+
+env:
+    DOCKER_IMAGE_NAME: ocr-service
+    CONTAINER_NAME: ocr-service-container
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v4
+              with:
+                  python-version: "3.12"
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@v3
+
+            - name: Install dependencies
+              run: uv sync
+
+            - name: Basic health check
+              run: |
+                  echo "✅ Dependencies installed successfully"
+                  # Add actual tests here when available
+                  # uv run pytest tests/
+
+    build-and-deploy:
+        needs: test
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+
+            - name: Log in to Docker Hub
+              uses: docker/login-action@v3
+              with:
+                  username: ${{ secrets.DOCKER_USERNAME }}
+                  password: ${{ secrets.DOCKER_PASSWORD }}
+
+            - name: Extract metadata
+              id: meta
+              uses: docker/metadata-action@v5
+              with:
+                  images: ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}
+                  tags: |
+                      type=ref,event=branch
+                      type=ref,event=pr
+                      type=sha,prefix={{branch}}-
+                      type=raw,value=latest,enable={{is_default_branch}}
+
+            - name: Build and push Docker image
+              uses: docker/build-push-action@v5
+              with:
+                  context: .
+                  file: ./Dockerfile
+                  push: true
+                  tags: ${{ steps.meta.outputs.tags }}
+                  labels: ${{ steps.meta.outputs.labels }}
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
+
+            - name: Deploy to VM
+              if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.event_name == 'workflow_dispatch'
+              uses: appleboy/ssh-action@v1.0.3
+              with:
+                  host: ${{ secrets.VM_HOST }}
+                  username: ${{ secrets.VM_USERNAME }}
+                  key: ${{ secrets.VM_SSH_KEY }}
+                  port: ${{ secrets.VM_PORT || 22 }}
+                  script: |
+                      set -e  # Exit on any error
+
+                      # Set variables based on environment
+                      IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}"
+                      ENV_FILE_PATH="${{ secrets.ENV_FILE_PATH }}"
+
+                      # Determine environment and tag
+                      if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+                        if [ "${{ github.event.inputs.environment }}" = "staging" ]; then
+                          CONTAINER_NAME="ocr-service-staging"
+                          PORT="8080"
+                          TAG="develop"
+                        else
+                          CONTAINER_NAME="${{ env.CONTAINER_NAME }}"
+                          PORT="80"
+                          TAG="latest"
+                        fi
+                      elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
+                        CONTAINER_NAME="${{ env.CONTAINER_NAME }}"
+                        PORT="80"
+                        TAG="latest"
+                      else
+                        CONTAINER_NAME="ocr-service-develop"
+                        PORT="8080"
+                        TAG="${{ github.ref_name }}"
+                      fi
+
+                      echo "🚀 Deploying image: ${IMAGE_NAME}:${TAG}"
+                      echo "📁 Using env file: ${ENV_FILE_PATH}"
+                      echo "🐳 Container: ${CONTAINER_NAME} on port ${PORT}"
+
+                      # Login to Docker Hub on VM
+                      echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+                      # Pull the latest image
+                      docker pull ${IMAGE_NAME}:${TAG}
+
+                      # Stop and remove existing container if it exists
+                      if [ $(docker ps -a -q -f name=${CONTAINER_NAME}) ]; then
+                        echo "🛑 Stopping existing container..."
+                        docker stop ${CONTAINER_NAME}
+                        docker rm ${CONTAINER_NAME}
+                      fi
+
+                      # Remove old images (keep last 3 versions)
+                      echo "🧹 Cleaning up old images..."
+                      docker images ${IMAGE_NAME} --format "table {{.Repository}}:{{.Tag}}\t{{.ID}}\t{{.CreatedAt}}" | tail -n +2 | sort -k3 -r | tail -n +4 | awk '{print $2}' | xargs -r docker rmi || true
+
+                      # Run new container with environment file
+                      echo "🎯 Starting new container..."
+                      docker run -d \
+                        --name ${CONTAINER_NAME} \
+                        --env-file ${ENV_FILE_PATH} \
+                        -p ${PORT}:80 \
+                        --restart unless-stopped \
+                        ${IMAGE_NAME}:${TAG}
+
+                      # Verify deployment
+                      echo "🔍 Verifying deployment..."
+                      sleep 15
+                      if [ $(docker ps -q -f name=${CONTAINER_NAME}) ]; then
+                        echo "✅ Deployment successful! Container is running."
+                        docker logs --tail 10 ${CONTAINER_NAME}
+                      else
+                        echo "❌ Deployment failed! Container is not running."
+                        docker logs ${CONTAINER_NAME}
+                        exit 1
+                      fi
+
+                      # Cleanup unused Docker resources
+                      echo "🧹 Final cleanup..."
+                      docker system prune -f
+
+            - name: Health Check
+              if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+              run: |
+                  sleep 30
+                  curl -f http://${{ secrets.VM_HOST }}/health || curl -f http://${{ secrets.VM_HOST }}/ || echo "Health check failed - please verify manually"

@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+    ocr-service:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        ports:
+            - "8000:80"
+        environment:
+            - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+        env_file:
+            - .env
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s
+        volumes:
+            # Optional: mount logs directory
+            - ./logs:/app/logs
+        networks:
+            - ocr-network
+
+networks:
+    ocr-network:
+        driver: bridge
