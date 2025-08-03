@@ -102,20 +102,20 @@ jobs:
                       if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
                         if [ "${{ github.event.inputs.environment }}" = "staging" ]; then
                           CONTAINER_NAME="ocr-service-staging"
-                          PORT="8000"
+                          PORT="8080"
                           TAG="develop"
                         else
                           CONTAINER_NAME="${{ env.CONTAINER_NAME }}"
-                          PORT="8000"
+                          PORT="80"
                           TAG="latest"
                         fi
                       elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
                         CONTAINER_NAME="${{ env.CONTAINER_NAME }}"
-                        PORT="8000"
+                        PORT="80"
                         TAG="latest"
                       else
                         CONTAINER_NAME="ocr-service-develop"
-                        PORT="8000"
+                        PORT="8080"
                         TAG="${{ github.ref_name }}"
                       fi
 
