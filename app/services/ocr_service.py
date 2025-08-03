@@ -53,7 +53,7 @@ async def perform_initial_ocr(image_bytes: bytes) -> str:
     # to avoid blocking the FastAPI async event loop.
     try:
         response = client.models.generate_content(
-                model="gemini-2.5-pro",
+                model="gemini-2.5-flash",
                 contents=[
                     types.Part.from_bytes(
                         data=image_bytes,
