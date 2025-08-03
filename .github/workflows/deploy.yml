@@ -145,7 +145,7 @@ jobs:
                       docker run -d \
                         --name ${CONTAINER_NAME} \
                         --env-file ${ENV_FILE_PATH} \
-                        -p ${PORT}:80 \
+                        -p ${PORT}:8000 \
                         --restart unless-stopped \
                         ${IMAGE_NAME}:${TAG}
 
