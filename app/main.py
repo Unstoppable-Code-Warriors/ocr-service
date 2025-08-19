@@ -80,7 +80,9 @@ async def process_document_image(
     try:
         structured_data = await process_image_to_structured_data(image_bytes)
         # Validate and serialize using the new model
-        return ProcessedDocumentData.model_validate(structured_data)
+        # return ProcessedDocumentData.model_validate(structured_data)
+
+        return structured_data
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
