@@ -144,6 +144,7 @@ jobs:
                       echo "🎯 Starting new container..."
                       docker run -d \
                         --name ${CONTAINER_NAME} \
+                        --env ${{ secrets.GOOGLE_API_KEY }} \
                         --env-file ${ENV_FILE_PATH} \
                         -p ${PORT}:8000 \
                         --restart unless-stopped \
